@@ -82,13 +82,21 @@ print("\n[STEP 1] Loading RAW layer...")
 con.execute(f"""
     CREATE OR REPLACE TABLE raw_crimes AS
     SELECT * FROM read_csv_auto('{RAW_DIR}/crimes.csv', ALL_VARCHAR=TRUE)
+    WHERE TRY_CAST("Year" AS INTEGER) = 2023
 """)
+
 audit("Crimes (raw)", "raw_crimes", "id")
+con.execute("COPY (SELECT * FROM dim_police_district_name) TO 'data/curated/dim_police_district_name.parquet' (FORMAT PARQUET)")
 
 con.execute(f"""
     CREATE OR REPLACE TABLE raw_311 AS
     SELECT * FROM read_csv_auto('{RAW_DIR}/311_service_requests.csv', ALL_VARCHAR=TRUE)
+    WHERE TRY_CAST(SUBSTR("created_date", 1, 4) AS INTEGER) = 2023
 """)
+
+
+
+
 raw_311_key = pick_expr(
     "raw_311",
     ["service_request_number", "sr_number", "request_id"],
